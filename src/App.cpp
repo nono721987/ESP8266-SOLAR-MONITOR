@@ -8,6 +8,7 @@
 #include "HistoryManager.h"
 #include "SolarLogic.h"
 #include "ConfigManager.h"
+#include "PumpController.h"
 
 unsigned long App::lastHistoryUpdate = 0;
 unsigned long App::lastStateUpdate = 0;
@@ -29,6 +30,7 @@ void App::begin()
     SensorManager::begin();
     MqttManager::begin();
     HistoryManager::begin();
+    PumpController::begin();
 
     log("System ready");
 }
@@ -60,6 +62,7 @@ if (millis() - lastStateUpdate > 2000)
 {
     lastStateUpdate = millis();
     SolarLogic::update();
+    PumpController::update(SolarLogic::shouldPumpRun());
 }
 
 }

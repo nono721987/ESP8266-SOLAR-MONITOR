@@ -33,6 +33,26 @@ void SolarLogic::update()
     }
 }
 
+bool SolarLogic::shouldPumpRun()
+{
+    float v = SensorManager::getVorlauf();
+    float r = SensorManager::getRuecklauf();
+
+    if (v == -127 || r == -127)
+        return false;
+
+    float delta = v - r;
+
+    // 🔥 einfache aber stabile Regel
+    if (delta > 5.0)
+        return true;
+
+    if (delta < 2.0)
+        return false;
+
+    return false;
+}
+
 String SolarLogic::getStateString()
 {
     return state;

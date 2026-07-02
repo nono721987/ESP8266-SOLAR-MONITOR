@@ -6,6 +6,8 @@ class SolarLogic {
 public:
     static void update();
 
+    static bool shouldPumpRun();
+
     static String getStateString();
 
 private:
