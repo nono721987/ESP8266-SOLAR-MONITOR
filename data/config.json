@@ -1,0 +1,6 @@
+{
+  "wifi_ssid": "",
+  "wifi_pass": "",
+  "mqtt_server": "192.168.1.56",
+  "mqtt_port": 1883
+}

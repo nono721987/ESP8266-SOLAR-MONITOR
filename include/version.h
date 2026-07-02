@@ -1,0 +1,4 @@
+#pragma once
+
+#define FIRMWARE_VERSION "0.1.0"
+#define DEVICE_NAME "ESP8266-SOLAR-MONITOR"
