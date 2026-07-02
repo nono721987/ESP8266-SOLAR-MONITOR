@@ -1,43 +1,39 @@
 #include "SolarLogic.h"
 #include "SensorManager.h"
 
-SolarState SolarLogic::state = OFF;
+String SolarLogic::state = "IDLE";
 
 void SolarLogic::update()
 {
-    float vorlauf = SensorManager::getVorlauf();
-    float ruecklauf = SensorManager::getRuecklauf();
-    float delta = SensorManager::getVorlauf() - SensorManager::getRuecklauf();
+    float v = SensorManager::getVorlauf();
+    float r = SensorManager::getRuecklauf();
 
-    // ❌ Fehlererkennung
-    if (vorlauf < -50 || ruecklauf < -50)
+    float delta = v - r;
+
+    // ❌ Fehlercheck
+    if (v == -127 || r == -127)
     {
-        state = ERROR;
+        state = "ERROR";
         return;
     }
 
-    // ☀️ Logik
-    if (delta > 6)
-        state = ACTIVE;
-    else if (delta > 2)
-        state = IDLE;
+    // 🔥 Heizlogik
+    if (delta > 5.0)
+    {
+        state = "HEATING";
+    }
+    else if (delta < 2.0)
+    {
+        state = "IDLE";
+    }
     else
-        state = OFF;
-}
-
-SolarState SolarLogic::getState()
-{
-    return state;
+    {
+        // Zwischenbereich = stabil halten
+        state = "IDLE";
+    }
 }
 
 String SolarLogic::getStateString()
 {
-    switch (state)
-    {
-        case OFF: return "OFF";
-        case IDLE: return "IDLE";
-        case ACTIVE: return "ACTIVE";
-        case ERROR: return "ERROR";
-    }
-    return "UNKNOWN";
+    return state;
 }

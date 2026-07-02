@@ -63,19 +63,35 @@ void MqttManager::publish()
     float v = SensorManager::getVorlauf();
     float r = SensorManager::getRuecklauf();
     float c = SensorManager::getCase();
-    float d = SensorManager::getVorlauf() - SensorManager::getRuecklauf();
+    float d = v - r;
 
-    String stateJson = "{";
-    stateJson += "\"v\":" + String(v) + ",";
-    stateJson += "\"r\":" + String(r) + ",";
-    stateJson += "\"c\":" + String(c) + ",";
-    stateJson += "\"d\":" + String(d) + ",";
-    stateJson += "\"state\":\"" + SolarLogic::getStateString() + "\"";
-    stateJson += "}";
+    // ❌ Fehlercheck (wichtig für echte Systeme)
+    if (v == -127 || r == -127 || c == -127)
+    {
+        String errorJson = "{\"state\":\"ERROR\"}";
+        client.publish("poolsolar/status", errorJson.c_str());
+        Serial.println("[MQTT] ERROR state gesendet");
+        return;
+    }
 
-    client.publish("poolsolar/state", stateJson.c_str());
+    // 🔵 TELEMETRIE (Messwerte)
+    String telemetry = "{";
+    telemetry += "\"v\":" + String(v) + ",";
+    telemetry += "\"r\":" + String(r) + ",";
+    telemetry += "\"c\":" + String(c) + ",";
+    telemetry += "\"delta\":" + String(d);
+    telemetry += "}";
 
-    Serial.println("[MQTT] state gesendet");
+    client.publish("poolsolar/telemetry", telemetry.c_str());
+
+    // 🔵 SYSTEM STATUS
+    String status = "{";
+    status += "\"state\":\"" + SolarLogic::getStateString() + "\"";
+    status += "}";
+
+    client.publish("poolsolar/status", status.c_str());
+
+    Serial.println("[MQTT] telemetry + status gesendet");
 }
 
 bool MqttManager::isConnected()
