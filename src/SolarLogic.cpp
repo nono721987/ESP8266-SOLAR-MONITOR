@@ -7,7 +7,7 @@ void SolarLogic::update()
 {
     float vorlauf = SensorManager::getVorlauf();
     float ruecklauf = SensorManager::getRuecklauf();
-    float delta = SensorManager::getDeltaT();
+    float delta = SensorManager::getVorlauf() - SensorManager::getRuecklauf();
 
     // ❌ Fehlererkennung
     if (vorlauf < -50 || ruecklauf < -50)

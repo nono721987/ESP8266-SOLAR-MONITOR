@@ -10,18 +10,46 @@
 
 ESP8266WebServer server(80);
 
-// Handler
+// --------------------------------------------------
+// FORWARD DECLARATIONS
+// --------------------------------------------------
 void handleRoot();
 void handleApiData();
 void handleApiHistory();
 void handleSettings();
 void handleSaveSettings();
 
+// --------------------------------------------------
+// INIT
+// --------------------------------------------------
 void WebServerManager::begin()
 {
     server.on("/", handleRoot);
     server.on("/api/data", handleApiData);
     server.on("/api/history", handleApiHistory);
+
+    server.on("/api/sensors", HTTP_GET, []() {
+        server.send(200, "application/json", SensorManager::getSensorListJson());
+    });
+
+    // 🔥 SENSOR MAPPING SAVE
+    server.on("/saveMapping", HTTP_POST, []() {
+
+        String id = server.arg("id");
+        String role = server.arg("role");
+
+        ConfigData &cfg = ConfigManager::get();
+
+        if (role == "vorlauf") cfg.sensors.vorlaufID = id;
+        else if (role == "ruecklauf") cfg.sensors.ruecklaufID = id;
+        else if (role == "case") cfg.sensors.caseID = id;
+
+        ConfigManager::save();
+
+        Serial.println("[MAP] " + id + " -> " + role);
+
+        server.send(200, "text/plain", "OK");
+    });
 
     server.on("/settings", handleSettings);
     server.on("/save", HTTP_POST, handleSaveSettings);
@@ -31,6 +59,9 @@ void WebServerManager::begin()
     Serial.println("[WEB] Server gestartet");
 }
 
+// --------------------------------------------------
+// LOOP
+// --------------------------------------------------
 void WebServerManager::loop()
 {
     server.handleClient();
@@ -173,25 +204,22 @@ void handleApiData()
     float v = SensorManager::getVorlauf();
     float r = SensorManager::getRuecklauf();
     float c = SensorManager::getCase();
-    float d = SensorManager::getDeltaT();
+    float d = SensorManager::getVorlauf() - SensorManager::getRuecklauf();
 
     String json = "{";
-
     json += "\"v\":" + String(v) + ",";
     json += "\"r\":" + String(r) + ",";
     json += "\"c\":" + String(c) + ",";
     json += "\"delta\":" + String(d) + ",";
-
     json += "\"mqtt\":" + String(MqttManager::isConnected() ? 1 : 0) + ",";
     json += "\"state\":\"" + SolarLogic::getStateString() + "\"";
-
     json += "}";
 
     server.send(200, "application/json", json);
 }
 
 // --------------------------------------------------
-// HISTORY API
+// HISTORY
 // --------------------------------------------------
 void handleApiHistory()
 {
@@ -209,8 +237,7 @@ void handleApiHistory()
         json += "\"c\":" + String(e.c);
         json += "}";
 
-        if (i < HistoryManager::size() - 1)
-            json += ",";
+        if (i < HistoryManager::size() - 1) json += ",";
     }
 
     json += "]}";
@@ -226,8 +253,23 @@ void handleSettings()
     String html = R"rawliteral(
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<style>
+body { font-family: Arial; background:#111; color:#fff; padding:20px; }
+.card { background:#222; padding:15px; margin:10px 0; border-radius:10px; }
+input { width:100%; padding:8px; margin:5px 0; }
+.sensor { background:#1a1a1a; padding:10px; margin:5px 0; border-radius:8px; }
+.warn { color:orange; }
+</style>
+</head>
 <body>
+
 <h2>Settings</h2>
+
+<div class="card">
+<h3>WiFi / MQTT</h3>
 
 <form action="/save" method="POST">
 
@@ -241,10 +283,58 @@ MQTT Server:<br>
 <input name="mqtt"><br>
 
 Port:<br>
-<input name="port"><br><br>
+<input name="port"><br>
 
 <button type="submit">Save</button>
 </form>
+</div>
+
+<div class="card">
+<h3>Sensoren</h3>
+<div id="sensors">Lade...</div>
+</div>
+
+<script>
+
+fetch('/api/sensors')
+.then(r => r.json())
+.then(data => {
+
+    let html = '';
+
+    if (data.length === 1 && data[0].id === "NO_SENSORS") {
+        html = "<div class='sensor warn'>Keine Sensoren erkannt</div>";
+    } else {
+        data.forEach(s => {
+
+            html += "<div class='sensor'>";
+            html += "Index: " + s.index + "<br>";
+            html += "ID: " + s.id + "<br><br>";
+
+            html += "<select onchange='saveMapping(\"" + s.id + "\", this.value)'>";
+            html += "<option value='none'>keine Zuordnung</option>";
+            html += "<option value='vorlauf'>Vorlauf</option>";
+            html += "<option value='ruecklauf'>Rücklauf</option>";
+            html += "<option value='case'>Case</option>";
+            html += "</select>";
+
+            html += "</div>";
+        });
+    }
+
+    document.getElementById("sensors").innerHTML = html;
+});
+
+function saveMapping(id, role)
+{
+    fetch('/saveMapping', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'id=' + id + '&role=' + role
+    });
+}
+
+</script>
 
 </body>
 </html>

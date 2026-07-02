@@ -1,21 +1,14 @@
 #include "SensorManager.h"
-
-#include <OneWire.h>
-#include <DallasTemperature.h>
+#include "ConfigManager.h"
 
 #define ONE_WIRE_BUS D4
 
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
+OneWire SensorManager::oneWire(ONE_WIRE_BUS);
+DallasTemperature SensorManager::sensors(&oneWire);
 
 float SensorManager::vorlauf = 0;
 float SensorManager::ruecklauf = 0;
 float SensorManager::caseTemp = 0;
-
-
-static unsigned long lastUpdate = 0;
-static const unsigned long interval = 2000;
-
 
 void SensorManager::begin()
 {
@@ -23,48 +16,91 @@ void SensorManager::begin()
 
     Serial.println("[SENSORS] DS18B20 gestartet");
 
-    int count = sensors.getDeviceCount();
     Serial.print("[SENSORS] Gefundene Sensoren: ");
-    Serial.println(count);
+    Serial.println(sensors.getDeviceCount());
 }
 
 void SensorManager::update()
 {
-    if (millis() - lastUpdate < interval)
-        return;
-
-    lastUpdate = millis();
-
     sensors.requestTemperatures();
 
-    vorlauf = sensors.getTempCByIndex(0);
-    ruecklauf = sensors.getTempCByIndex(1);
-    caseTemp = sensors.getTempCByIndex(2);
+    ConfigData &cfg = ConfigManager::get();
 
-    Serial.print("[SENSORS] V: ");
-    Serial.print(vorlauf);
-    Serial.print(" R: ");
-    Serial.print(ruecklauf);
-    Serial.print(" C: ");
-    Serial.println(caseTemp);
+    vorlauf = getByID(cfg.sensors.vorlaufID);
+    ruecklauf = getByID(cfg.sensors.ruecklaufID);
+    caseTemp = getByID(cfg.sensors.caseID);
 }
 
-float SensorManager::getVorlauf()
+float SensorManager::getByID(const String &id)
 {
-    return vorlauf;
+    if (id.length() == 0) return -127;
+
+    DeviceAddress addr;
+    int count = sensors.getDeviceCount();
+
+    for (int i = 0; i < count; i++)
+    {
+        if (sensors.getAddress(addr, i))
+        {
+            String currentID = "";
+
+            for (uint8_t j = 0; j < 8; j++)
+            {
+                if (addr[j] < 16) currentID += "0";
+                currentID += String(addr[j], HEX);
+            }
+
+            currentID.toUpperCase();
+
+            String target = id;
+            target.toUpperCase();
+
+            if (currentID == target)
+            {
+                return sensors.getTempC(addr);
+            }
+        }
+    }
+
+    return -127; // Sensor nicht gefunden
 }
 
-float SensorManager::getRuecklauf()
+String SensorManager::getSensorListJson()
 {
-    return ruecklauf;
+    DeviceAddress addr;
+    int count = sensors.getDeviceCount();
+
+    if (count == 0)
+        return "[{\"index\":-1,\"id\":\"NO_SENSORS\"}]";
+
+    String json = "[";
+
+    for (int i = 0; i < count; i++)
+    {
+        if (sensors.getAddress(addr, i))
+        {
+            String id = "";
+
+            for (uint8_t j = 0; j < 8; j++)
+            {
+                if (addr[j] < 16) id += "0";
+                id += String(addr[j], HEX);
+            }
+
+            id.toUpperCase();
+
+            json += "{";
+            json += "\"index\":" + String(i) + ",";
+            json += "\"id\":\"" + id + "\"}";
+        }
+
+        if (i < count - 1) json += ",";
+    }
+
+    json += "]";
+    return json;
 }
 
-float SensorManager::getCase()
-{
-    return caseTemp;
-}
-
-float SensorManager::getDeltaT()
-{
-    return vorlauf - ruecklauf;
-}
+float SensorManager::getVorlauf()  { return vorlauf; }
+float SensorManager::getRuecklauf(){ return ruecklauf; }
+float SensorManager::getCase()     { return caseTemp; }

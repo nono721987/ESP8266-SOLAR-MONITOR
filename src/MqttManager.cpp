@@ -63,7 +63,7 @@ void MqttManager::publish()
     float v = SensorManager::getVorlauf();
     float r = SensorManager::getRuecklauf();
     float c = SensorManager::getCase();
-    float d = SensorManager::getDeltaT();
+    float d = SensorManager::getVorlauf() - SensorManager::getRuecklauf();
 
     String stateJson = "{";
     stateJson += "\"v\":" + String(v) + ",";
