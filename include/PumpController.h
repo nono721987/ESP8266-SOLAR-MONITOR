@@ -11,4 +11,7 @@ public:
 
 private:
     static bool running;
+
+        static unsigned long lastStart;
+    static unsigned long lastStop;
 };
