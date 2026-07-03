@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<style>
+body { font-family: Arial; background:#111; color:white; padding:20px; }
+.card { background:#222; padding:15px; margin-bottom:15px; border-radius:10px; }
+input { width:100%; padding:6px; margin:5px 0; }
+button { padding:10px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>⚙ Einstellungen</h2>
+
+<form action="/save" method="POST">
+
+<div class="card">
+<h3>WiFi</h3>
+SSID<br>
+<input name="ssid" value="{{ssid}}"><br>
+Password<br>
+<input name="pass" value="{{pass}}" type="password">
+</div>
+
+<div class="card">
+<h3>MQTT</h3>
+Server<br>
+<input name="mqtt" value="{{mqtt}}"><br>
+Port<br>
+<input name="port" value="{{port}}">
+</div>
+
+<div class="card">
+<h3>Pumpe</h3>
+
+<label>
+<input type="checkbox" name="pumpEnabled" {{pumpEnabled}}>
+Aktiv
+</label><br><br>
+
+Delta EIN<br>
+<input name="deltaOn" value="{{deltaOn}}"><br>
+
+Delta AUS<br>
+<input name="deltaOff" value="{{deltaOff}}"><br>
+
+Mindestlaufzeit (s)<br>
+<input name="minRunTime" value="{{minRunTime}}"><br>
+
+Mindeststillstand (s)<br>
+<input name="minOffTime" value="{{minOffTime}}">
+</div>
+
+<button type="submit">Speichern</button>
+
+</form>
+
+</body>
+</html>

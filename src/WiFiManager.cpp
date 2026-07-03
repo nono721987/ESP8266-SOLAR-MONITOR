@@ -27,7 +27,7 @@ void WiFiManager::connectWiFi()
     ConfigData &cfg = ConfigManager::get();
 
 
-    if (cfg.wifi_ssid.length() == 0)
+    if (cfg.wifi_ssid.length() < 3)
     {
         Serial.println("[WIFI] First Start → AP Mode");
 
@@ -45,24 +45,46 @@ void WiFiManager::connectWiFi()
         Serial.print(".");
     }
 
+if (WiFi.status() == WL_CONNECTED)
+{
+    Serial.println();
+    Serial.println("[WIFI] Verbunden!");
+    Serial.print("[WIFI] IP: ");
+    Serial.println(WiFi.localIP());
+    apMode = false;
+}
+else
+{
+    Serial.println();
+    Serial.println("[WIFI] Verbindung fehlgeschlagen!");
+
+    delay(2000);   // 👈 NEU: Stabilisierung
+
+    // erst nochmal versuchen
+    WiFi.begin(cfg.wifi_ssid.c_str(), cfg.wifi_pass.c_str());
+
+    int retry = 10;
+    while (WiFi.status() != WL_CONNECTED && retry-- > 0)
+    {
+        delay(500);
+        Serial.print("#");
+    }
+
     if (WiFi.status() == WL_CONNECTED)
     {
-        Serial.println();
-        Serial.println("[WIFI] Verbunden!");
-        Serial.print("[WIFI] IP: ");
-        Serial.println(WiFi.localIP());
+        Serial.println("\n[WIFI] Retry erfolgreich!");
         apMode = false;
+        return;
     }
-    else
-    {
-        Serial.println();
-        Serial.println("[WIFI] Verbindung fehlgeschlagen!");
-        startAP();
-    }
+
+    startAP();
+}
 }
 
 void WiFiManager::startAP()
 {
+    apMode = true;
+    
     WiFi.mode(WIFI_AP);
     WiFi.softAP("SOLAR-SETUP");
 

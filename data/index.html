@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Solar Monitor</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #111;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card {
+            background: #222;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+
+        a {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>🌞 Solar Monitor</h2>
+
+<div class="card">
+    <b>Vorlauf:</b> <span id="v">-</span><br>
+    <b>Rücklauf:</b> <span id="r">-</span><br>
+    <b>Case:</b> <span id="c">-</span><br>
+    <b>Delta:</b> <span id="d">-</span><br>
+</div>
+
+<div class="card">
+    <b>MQTT:</b> <span id="mqtt">-</span><br>
+    <b>Status:</b> <span id="state">-</span>
+</div>
+
+<div class="card">
+    <a href="/settings">⚙ Settings</a>
+</div>
+
+<script>
+
+function update()
+{
+    fetch('/api/data')
+    .then(r => r.json())
+    .then(data => {
+
+        document.getElementById("v").innerText = data.v;
+        document.getElementById("r").innerText = data.r;
+        document.getElementById("c").innerText = data.c;
+        document.getElementById("d").innerText = data.delta;
+
+        document.getElementById("mqtt").innerText =
+            data.mqtt ? "ONLINE" : "OFFLINE";
+
+        document.getElementById("state").innerText = data.state;
+    });
+}
+
+update();
+setInterval(update, 2000);
+
+</script>
+
+</body>
+</html>
