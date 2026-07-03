@@ -1,19 +1,47 @@
-name: PlatformIO CI
+name: PlatformIO CI + Release
 
 on:
   push:
-  pull_request:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
-      - run: pip install platformio
+      - name: Install PlatformIO
+        run: pip install platformio
 
-      - run: pio run
+      - name: Build firmware
+        run: pio run
+
+      - name: Show build output (debug)
+        run: ls -R .pio
+
+      - name: Prepare firmware file
+        run: |
+          mkdir -p release
+          echo "Searching firmware.bin..."
+          FIRMWARE=$(find .pio -name "firmware.bin" | head -n 1)
+          echo "Found: $FIRMWARE"
+          cp "$FIRMWARE" release/esp8266-solar.bin
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: release/esp8266-solar.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -33,23 +33,21 @@ void WebServerManager::begin()
     });
 
     // 🔥 SENSOR MAPPING SAVE
-    server.on("/saveMapping", HTTP_POST, []() {
+server.on("/saveMapping", HTTP_POST, []() {
 
-        String id = server.arg("id");
-        String role = server.arg("role");
+    String id = server.arg("id");
+    String role = server.arg("role");
 
-        ConfigData &cfg = ConfigManager::get();
+    ConfigData &cfg = ConfigManager::get();
 
-        if (role == "vorlauf") cfg.sensors.vorlaufID = id;
-        else if (role == "ruecklauf") cfg.sensors.ruecklaufID = id;
-        else if (role == "case") cfg.sensors.caseID = id;
+    if (role == "vorlauf") cfg.sensors.vorlaufID = id;
+    else if (role == "ruecklauf") cfg.sensors.ruecklaufID = id;
+    else if (role == "case") cfg.sensors.caseID = id;
 
-        ConfigManager::save();
+    ConfigManager::save();
 
-        Serial.println("[MAP] " + id + " -> " + role);
-
-        server.send(200, "text/plain", "OK");
-    });
+    server.send(200, "text/plain", "OK");
+});
 
     server.on("/settings", handleSettings);
     server.on("/save", HTTP_POST, handleSaveSettings);

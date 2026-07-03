@@ -10,10 +10,11 @@ struct SensorConfig {
 struct ConfigData {
     String wifi_ssid;
     String wifi_pass;
+
     String mqtt_server;
     int mqtt_port;
 
-    SensorConfig sensors;   // 🔥 DAS FEHLTE
+    SensorConfig sensors;   // 👈 DAS ist der neue Teil
 };
 
 class ConfigManager {

@@ -3,8 +3,10 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include "ConfigManager.h"
 
-class SensorManager {
+class SensorManager
+{
 public:
     static void begin();
     static void update();
@@ -12,16 +14,12 @@ public:
     static float getVorlauf();
     static float getRuecklauf();
     static float getCase();
+    static float getDeltaT();
 
-    static float getByID(const String &id);
-
+    static float getTempByID(const String &id);
     static String getSensorListJson();
 
 private:
-    static float vorlauf;
-    static float ruecklauf;
-    static float caseTemp;
-
     static OneWire oneWire;
     static DallasTemperature sensors;
 };

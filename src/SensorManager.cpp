@@ -1,37 +1,22 @@
 #include "SensorManager.h"
-#include "ConfigManager.h"
 
 #define ONE_WIRE_BUS D4
 
 OneWire SensorManager::oneWire(ONE_WIRE_BUS);
-DallasTemperature SensorManager::sensors(&oneWire);
-
-float SensorManager::vorlauf = 0;
-float SensorManager::ruecklauf = 0;
-float SensorManager::caseTemp = 0;
+DallasTemperature SensorManager::sensors(&SensorManager::oneWire);
 
 void SensorManager::begin()
 {
     sensors.begin();
-
-    Serial.println("[SENSORS] DS18B20 gestartet");
-
-    Serial.print("[SENSORS] Gefundene Sensoren: ");
-    Serial.println(sensors.getDeviceCount());
+    Serial.println("[SENSORS] gestartet");
 }
 
 void SensorManager::update()
 {
     sensors.requestTemperatures();
-
-    ConfigData &cfg = ConfigManager::get();
-
-    vorlauf = getByID(cfg.sensors.vorlaufID);
-    ruecklauf = getByID(cfg.sensors.ruecklaufID);
-    caseTemp = getByID(cfg.sensors.caseID);
 }
 
-float SensorManager::getByID(const String &id)
+float SensorManager::getTempByID(const String &id)
 {
     if (id.length() == 0) return -127;
 
@@ -67,32 +52,27 @@ float SensorManager::getByID(const String &id)
 
 String SensorManager::getSensorListJson()
 {
-    DeviceAddress addr;
+    String json = "[";
+
     int count = sensors.getDeviceCount();
 
     if (count == 0)
-        return "[{\"index\":-1,\"id\":\"NO_SENSORS\"}]";
-
-    String json = "[";
+        return "[{\"id\":\"NO_SENSORS\",\"index\":-1}]";
 
     for (int i = 0; i < count; i++)
     {
-        if (sensors.getAddress(addr, i))
+        DeviceAddress addr;
+        sensors.getAddress(addr, i);
+
+        String id = "";
+
+        for (int j = 0; j < 8; j++)
         {
-            String id = "";
-
-            for (uint8_t j = 0; j < 8; j++)
-            {
-                if (addr[j] < 16) id += "0";
-                id += String(addr[j], HEX);
-            }
-
-            id.toUpperCase();
-
-            json += "{";
-            json += "\"index\":" + String(i) + ",";
-            json += "\"id\":\"" + id + "\"}";
+            if (addr[j] < 16) id += "0";
+            id += String(addr[j], HEX);
         }
+
+        json += "{\"index\":" + String(i) + ",\"id\":\"" + id + "\"}";
 
         if (i < count - 1) json += ",";
     }
@@ -101,6 +81,23 @@ String SensorManager::getSensorListJson()
     return json;
 }
 
-float SensorManager::getVorlauf()  { return vorlauf; }
-float SensorManager::getRuecklauf(){ return ruecklauf; }
-float SensorManager::getCase()     { return caseTemp; }
+
+float SensorManager::getVorlauf()
+{
+    return getTempByID(ConfigManager::get().sensors.vorlaufID);
+}
+
+float SensorManager::getRuecklauf()
+{
+    return getTempByID(ConfigManager::get().sensors.ruecklaufID);
+}
+
+float SensorManager::getCase()
+{
+    return getTempByID(ConfigManager::get().sensors.caseID);
+}
+
+float SensorManager::getDeltaT()
+{
+    return getVorlauf() - getRuecklauf();
+}
