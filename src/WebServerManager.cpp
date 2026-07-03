@@ -7,6 +7,7 @@
 #include "SolarLogic.h"
 #include "HistoryManager.h"
 #include "ConfigManager.h"
+#include "PumpController.h"
 
 ESP8266WebServer server(80);
 
@@ -103,6 +104,7 @@ body { font-family: Arial; background:#111; color:#fff; }
 
 <div class="card">MQTT<br><span id="mqtt">-</span></div>
 <div class="card">State<br><span id="state">-</span></div>
+<div class="card">Pumpe<br><span id="pump">-</span></div>
 
 <div class="card">
 <a href="/settings" style="color:white;">⚙ Settings</a>
@@ -149,6 +151,7 @@ function update() {
             data.mqtt ? "🟢 CONNECTED" : "🔴 OFFLINE";
 
         document.getElementById("state").innerHTML = data.state;
+        document.getElementById("pump").innerHTML = data.pump ? "🟢 EIN" : "⚪ AUS";
     });
 }
 
@@ -210,6 +213,7 @@ void handleApiData()
     json += "\"c\":" + String(c) + ",";
     json += "\"delta\":" + String(d) + ",";
     json += "\"mqtt\":" + String(MqttManager::isConnected() ? 1 : 0) + ",";
+    json += "\"pump\":" + String(PumpController::isRunning() ? 1 : 0) + ",";
     json += "\"state\":\"" + SolarLogic::getStateString() + "\"";
     json += "}";
 
